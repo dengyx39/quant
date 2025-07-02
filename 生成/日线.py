@@ -1,24 +1,31 @@
 import tushare as ts
 import pandas as pd
-import config
 import numpy as np
 from arch import arch_model
 import matplotlib.pyplot as plt
 import seaborn as sns
+from datetime import datetime, timedelta
+from fetch import *
+# 初始化
+token = get_token()
+pro = ts.pro_api(token)
+#获取上一个交易日
+date = get_prev_trade_date()
 
 # 设置是否不买入科创板和创业板股票
-buy_able = True
-start_date = "20200101"
-data = pd.read_csv(r"C:\Users\24645\Desktop\量化/数据源csv/股票列表.csv")
+buy_KCB_CYB= False
+start_date = "20180701"
+data = pd.read_csv("../数据源csv/股票列表.csv")
 index = data["ts_code"]
-pro = ts.pro_api(config.token)
+
 for code in list(index):
-    if buy_able:
-    #如果code非科创板创业板（即60和00开头）才会执行
+    if not buy_KCB_CYB:
+    #如果code是科创板创业板就直接略过
         if not ((code[0] == '6' or code[0] == '0') and code[1] == '0'):
             continue
     print(code)
     df_daily = pro.daily(ts_code=code, start_date=start_date)
+    df_daily.head(100)
     df_daily_basic = pro.daily_basic(ts_code=code, start_date=start_date)
     df_daily = pd.merge(df_daily, df_daily_basic, on=['trade_date','ts_code'])
     #设计一个英文列名到中文列名的转换map
@@ -52,4 +59,4 @@ for code in list(index):
     }
 
     df_daily.rename(columns=column_mapping, inplace=True)
-    df_daily.to_csv(rf'C:\Users\24645\Desktop\量化\数据源csv\日线数据\{code}.csv', mode='w', header=True)
+    df_daily.to_csv(rf'..\数据源csv\日线数据\{code}.csv', mode='w', header=True)
